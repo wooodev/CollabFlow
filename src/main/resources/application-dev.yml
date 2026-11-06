@@ -8,6 +8,14 @@ spring:
     clean-on-validation-error: false
     out-of-order: false
 
+  # dev: MailHog (docker-compose에 포함)
+  mail:
+    host: localhost
+    port: 1025
+    properties:
+      mail.smtp.auth: false
+      mail.smtp.starttls.enable: false
+
   security:
     oauth2:
       client:
