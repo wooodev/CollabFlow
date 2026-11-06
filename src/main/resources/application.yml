@@ -65,6 +65,9 @@ management:
       prometheus:
         enabled: true
 
+app:
+  frontend-url: ${FRONTEND_URL:http://localhost:3000}
+
 logging:
   level:
     com.collabflow: INFO
