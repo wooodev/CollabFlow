@@ -43,11 +43,14 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(
                     "/api/v1/auth/**",
+                    "/api/v1/invitations/*/accept",   // 초대 수락은 인증 필요 → 아래 authenticated
                     "/oauth2/**",
                     "/login/oauth2/**",
                     "/ws/**",
                     "/actuator/health"
                 ).permitAll()
+                // 초대 정보 조회(GET)만 비로그인 허용, 나머지는 인증
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/invitations/*").permitAll()
                 .anyRequest().authenticated()
             )
             .oauth2Login(oauth2 -> oauth2

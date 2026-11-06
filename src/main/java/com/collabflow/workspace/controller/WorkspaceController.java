@@ -3,8 +3,10 @@ package com.collabflow.workspace.controller;
 import com.collabflow.auth.domain.User;
 import com.collabflow.common.response.ApiResponse;
 import com.collabflow.workspace.dto.InviteMemberRequest;
+import com.collabflow.workspace.dto.InvitationResponse;
 import com.collabflow.workspace.dto.WorkspaceCreateRequest;
 import com.collabflow.workspace.dto.WorkspaceResponse;
+import com.collabflow.workspace.service.InvitationService;
 import com.collabflow.workspace.service.WorkspaceService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +23,7 @@ import java.util.UUID;
 public class WorkspaceController {
 
     private final WorkspaceService workspaceService;
+    private final InvitationService invitationService;
 
     @GetMapping
     public ApiResponse<List<WorkspaceResponse>> list(@AuthenticationPrincipal User user) {
@@ -47,11 +50,11 @@ public class WorkspaceController {
     }
 
     @PostMapping("/{id}/invite")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void invite(@PathVariable UUID id,
-                       @Valid @RequestBody InviteMemberRequest request,
-                       @AuthenticationPrincipal User user) {
-        workspaceService.invite(id, request, user.getId());
+    @ResponseStatus(HttpStatus.CREATED)
+    public ApiResponse<InvitationResponse> invite(@PathVariable UUID id,
+                                                   @Valid @RequestBody InviteMemberRequest request,
+                                                   @AuthenticationPrincipal User user) {
+        return ApiResponse.ok(invitationService.invite(id, request, user.getId()));
     }
 
     @DeleteMapping("/{id}/members/{userId}")
