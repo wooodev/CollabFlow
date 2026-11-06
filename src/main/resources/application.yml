@@ -79,6 +79,13 @@ app:
   mail-from: ${MAIL_FROM:noreply@collabflow.io}
   invitation-expiry-hours: 72
 
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+
 logging:
   level:
     com.collabflow: INFO
