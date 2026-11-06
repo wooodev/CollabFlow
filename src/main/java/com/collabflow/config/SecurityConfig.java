@@ -1,6 +1,8 @@
 package com.collabflow.config;
 
 import com.collabflow.auth.jwt.JwtAuthFilter;
+import com.collabflow.auth.oauth2.CustomOAuth2UserService;
+import com.collabflow.auth.oauth2.OAuth2SuccessHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -27,6 +29,8 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtAuthFilter jwtAuthFilter;
+    private final CustomOAuth2UserService customOAuth2UserService;
+    private final OAuth2SuccessHandler oAuth2SuccessHandler;
     private final com.collabflow.auth.service.CustomUserDetailsService userDetailsService;
 
     @Bean
@@ -47,7 +51,8 @@ public class SecurityConfig {
                 .anyRequest().authenticated()
             )
             .oauth2Login(oauth2 -> oauth2
-                .loginPage("/login")
+                .userInfoEndpoint(endpoint -> endpoint.userService(customOAuth2UserService))
+                .successHandler(oAuth2SuccessHandler)
             )
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
