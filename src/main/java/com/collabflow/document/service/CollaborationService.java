@@ -5,7 +5,9 @@ import com.collabflow.common.exception.BusinessException;
 import com.collabflow.document.domain.Document;
 import com.collabflow.document.dto.ws.BroadcastPayload;
 import com.collabflow.document.dto.ws.DocumentInitPayload;
+import com.collabflow.document.domain.DocumentVersion;
 import com.collabflow.document.repository.DocumentRepository;
+import com.collabflow.document.repository.DocumentVersionRepository;
 import com.collabflow.workspace.repository.WorkspaceMemberRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -24,12 +26,14 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class CollaborationService {
 
-    private static final String DOC_STATE_KEY   = "doc:state:";
-    private static final String DOC_ACTIVE_KEY  = "doc:active:";
-    private static final String DOC_UPDATE_CHAN  = "doc:updates:";
-    private static final String DOC_DIRTY_KEY   = "docs:dirty";
+    private static final String DOC_STATE_KEY       = "doc:state:";
+    private static final String DOC_ACTIVE_KEY      = "doc:active:";
+    private static final String DOC_UPDATE_CHAN     = "doc:updates:";
+    private static final String DOC_DIRTY_KEY       = "docs:dirty";
+    private static final String DOC_LAST_EDITOR_KEY = "doc:last-editor:";
 
     private final DocumentRepository documentRepository;
+    private final DocumentVersionRepository versionRepository;
     private final WorkspaceMemberRepository memberRepository;
     private final StringRedisTemplate stringRedisTemplate;
     private final SimpMessagingTemplate messagingTemplate;
@@ -73,9 +77,10 @@ public class CollaborationService {
     public void applyUpdate(String docId, String updateBase64, User user) {
         requireAccess(UUID.fromString(docId), user.getId());
 
-        // 현재 Redis 상태 저장 (Phase 2에서는 마지막 update를 state로 사용)
         stringRedisTemplate.opsForValue().set(DOC_STATE_KEY + docId, updateBase64);
         stringRedisTemplate.opsForSet().add(DOC_DIRTY_KEY, docId);
+        // 마지막 편집자 추적 (스냅샷 시 DocumentVersion 생성에 사용)
+        stringRedisTemplate.opsForValue().set(DOC_LAST_EDITOR_KEY + docId, user.getId().toString());
 
         // Redis Pub/Sub으로 다른 서버에 전파
         BroadcastPayload payload = buildPayload(BroadcastPayload.Type.UPDATE, docId, user, updateBase64);
@@ -117,6 +122,12 @@ public class CollaborationService {
         if (state == null) return;
 
         documentRepository.findById(UUID.fromString(docId)).ifPresent(doc -> {
+            // 이전 상태를 버전 이력으로 저장
+            if (doc.getContent() != null && !doc.getContent().equals(state)) {
+                String editorStr = stringRedisTemplate.opsForValue().get(DOC_LAST_EDITOR_KEY + docId);
+                UUID editorId = editorStr != null ? UUID.fromString(editorStr) : doc.getCreatedBy();
+                versionRepository.save(DocumentVersion.snapshot(doc.getId(), doc.getContent(), editorId));
+            }
             doc.updateContent(state);
             documentRepository.save(doc);
             stringRedisTemplate.opsForSet().remove(DOC_DIRTY_KEY, docId);
