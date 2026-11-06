@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: collabflow
+          POSTGRES_USER: collabflow
+          POSTGRES_PASSWORD: collabflow1234
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+        continue-on-error: true   # gradlew 없을 경우 무시
+
+      - name: Build & Test
+        run: |
+          if [ -f "./gradlew" ]; then
+            ./gradlew build --no-daemon
+          else
+            gradle build --no-daemon
+          fi
+        env:
+          SPRING_PROFILES_ACTIVE: dev
+          DB_HOST: localhost
+          DB_USERNAME: collabflow
+          DB_PASSWORD: collabflow1234
+          REDIS_HOST: localhost
+          JWT_SECRET: ci-test-secret-key-at-least-32-characters-long
+          GOOGLE_CLIENT_ID: ci-dummy-client-id
+          GOOGLE_CLIENT_SECRET: ci-dummy-client-secret
+
+      - name: Upload test reports
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: test-reports
+          path: build/reports/tests/
+          retention-days: 7
