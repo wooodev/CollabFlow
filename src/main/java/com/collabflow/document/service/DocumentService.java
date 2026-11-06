@@ -33,10 +33,12 @@ public class DocumentService {
     }
 
     @Transactional(readOnly = true)
-    public List<DocumentResponse> findAll(UUID workspaceId, UUID userId) {
+    public List<DocumentResponse> findAll(UUID workspaceId, String search, UUID userId) {
         requireMember(workspaceId, userId);
-        return documentRepository.findByWorkspaceIdOrderByUpdatedAtDesc(workspaceId)
-                .stream().map(DocumentResponse::from).toList();
+        var docs = (search != null && !search.isBlank())
+                ? documentRepository.findByWorkspaceIdAndTitleContainingIgnoreCase(workspaceId, search.trim())
+                : documentRepository.findByWorkspaceIdOrderByUpdatedAtDesc(workspaceId);
+        return docs.stream().map(DocumentResponse::from).toList();
     }
 
     @Transactional(readOnly = true)
