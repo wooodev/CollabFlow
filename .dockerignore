@@ -1,0 +1,13 @@
+.gradle
+build
+*.iml
+*.ipr
+*.iws
+.idea
+.vscode
+.env
+.env.local
+.git
+.github
+*.md
+monitoring
