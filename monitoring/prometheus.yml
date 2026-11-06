@@ -1,0 +1,22 @@
+global:
+  scrape_interval:     15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  # CollabFlow 앱 메트릭 (Spring Boot Actuator)
+  - job_name: 'collabflow'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets:
+          # 로컬 개발: host.docker.internal
+          # 운영: app (docker-compose 서비스명)
+          - 'host.docker.internal:8080'
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: 'collabflow-app'
+
+  # Prometheus 자체 메트릭
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
