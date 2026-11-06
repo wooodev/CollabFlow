@@ -47,7 +47,10 @@ public class SecurityConfig {
                     "/oauth2/**",
                     "/login/oauth2/**",
                     "/ws/**",
-                    "/actuator/health"
+                    "/actuator/health",
+                    "/api-docs/**",
+                    "/swagger-ui/**",
+                    "/swagger-ui.html"
                 ).permitAll()
                 // 초대 정보 조회(GET)만 비로그인 허용, 나머지는 인증
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/invitations/*").permitAll()
