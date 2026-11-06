@@ -1,0 +1,21 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+
+  datasource:
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 10
+
+server:
+  tomcat:
+    max-threads: 200
+
+logging:
+  level:
+    com.collabflow: WARN
+    org.springframework: WARN
+  file:
+    name: /var/log/collabflow/application.log
